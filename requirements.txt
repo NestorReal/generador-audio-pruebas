@@ -1,0 +1,17 @@
+# requirements.txt — generador-audio-pruebas
+#
+# Este programa NO necesita instalar paquetes de Python con pip.
+# Usa únicamente la librería estándar de Python 3 (argparse, csv, subprocess,
+# pathlib, etc.), que ya viene incluida.
+#
+# Lo que SÍ necesita son dos cosas del SISTEMA (no de pip):
+#
+#   1. Python 3.8 o superior   -> las Macs ya lo traen (python3)
+#   2. ffmpeg (incluye ffprobe) -> se instala con:  brew install ffmpeg
+#   3. macOS                     -> usa el comando `say` (voz del sistema)
+#
+# Para instalar y verificar todo de un jalón, corre:
+#
+#       ./instalar.sh
+#
+# (No hay líneas de paquetes abajo a propósito: no hace falta ningún pip install.)

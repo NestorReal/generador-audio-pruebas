@@ -1,0 +1,108 @@
+===========================================================================
+  GENERADOR DE AUDIO DE PRUEBA (texto  ->  .wav)
+===========================================================================
+
+Este programita convierte texto en archivos de audio .wav, en el formato que
+usan las pruebas (WAV PCM, 16 kHz, mono).
+
+
+---------------------------------------------------------------------------
+INSTALACION (la forma facil: un solo comando)
+---------------------------------------------------------------------------
+
+Abre la app "Terminal" (Aplicaciones > Utilidades > Terminal), entra a esta
+carpeta y corre el instalador. El se encarga de revisar e instalar lo que
+falte, y hace una prueba al final:
+
+    cd ~/Documents/generador-audio-pruebas
+    ./instalar.sh
+
+Si todo sale bien, veras "TODO LISTO" y ya puedes usarlo (sigue mas abajo).
+
+Si prefieres hacerlo a mano, aqui esta lo que el instalador revisa:
+
+
+---------------------------------------------------------------------------
+QUE NECESITAS (si lo haces a mano)
+---------------------------------------------------------------------------
+
+1) Una Mac.
+   El programa usa la voz integrada de macOS ("say"). En Windows o Linux
+   NO funciona.
+
+2) ffmpeg.
+   En la Terminal escribe:
+
+       brew install ffmpeg
+
+   Si te dice que "brew" no existe, primero instala Homebrew desde:
+       https://brew.sh
+   (es copiar y pegar una linea en la Terminal).
+
+   Para saber si ya lo tienes, escribe:  ffmpeg -version
+   Si te muestra un texto con numeros de version, ya esta instalado.
+
+3) No necesitas instalar nada de Python (usa lo que ya trae la Mac).
+   Ver requirements.txt para el detalle.
+
+
+---------------------------------------------------------------------------
+COMO USARLO
+---------------------------------------------------------------------------
+
+Primero, en la Terminal, entra a la carpeta donde esta este programa. Ejemplo:
+
+    cd ~/Documents/generador-audio-pruebas
+
+
+>>> OPCION A — un solo audio:
+
+    python3 generar_audio.py --texto "Buenas tardes, le confirmo su saldo." --salida MI-AUDIO
+
+    Esto crea el archivo:  audios/MI-AUDIO.wav
+
+
+>>> OPCION B — varios audios de un jalon (lo mas comodo):
+
+    python3 generar_audio.py --lote guiones.csv
+
+    Esto lee el archivo "guiones.csv" y crea un .wav por cada renglon,
+    todos dentro de la carpeta "audios".
+
+    El archivo guiones.csv se ve asi (puedes abrirlo en Excel):
+
+        nombre,texto
+        AUDIO-1,"Buenas tardes, le confirmo que su contrato quedo activo."
+        AUDIO-2,"Le recuerdo que su estado de cuenta ya esta disponible."
+
+    - "nombre" = como se va a llamar el archivo (sin .wav).
+    - "texto"  = lo que quieres que diga el audio (entre comillas).
+
+    Ya viene un "guiones_ejemplo.csv" para que lo copies y lo edites.
+
+
+---------------------------------------------------------------------------
+OPCIONES EXTRA (no son obligatorias)
+---------------------------------------------------------------------------
+
+--out-dir CARPETA   Guarda los audios en otra carpeta.
+                    Ejemplo:  --out-dir ~/Desktop/mis-audios
+
+--voz NOMBRE        Cambia la voz. Por defecto es "Paulina" (espanol Mexico).
+                    Para ver las disponibles, en la Terminal:
+                        say -v '?' | grep es_
+
+--volumen 0.05      Baja el volumen del audio (para simular audio de mala
+                    calidad). Solo aplica con --texto. El valor va de 0 a 1.
+
+
+---------------------------------------------------------------------------
+SI ALGO FALLA
+---------------------------------------------------------------------------
+
+- "Falta ffmpeg..."  ->  no instalaste ffmpeg (mira el paso 2 de arriba).
+- "solo corre en una Mac"  ->  no estas en una Mac.
+- "python3: command not found"  ->  las Macs traen Python; prueba escribiendo
+   "python3 --version". Si no lo tiene, instalalo desde https://www.python.org
+
+Cualquier duda, avisa.
