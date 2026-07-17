@@ -1,17 +1,24 @@
 # requirements.txt — generador-audio-pruebas
 #
-# Este programa NO necesita instalar paquetes de Python con pip.
-# Usa únicamente la librería estándar de Python 3 (argparse, csv, subprocess,
-# pathlib, etc.), que ya viene incluida.
+# Este programa NO necesita instalar paquetes de Python con pip, NI ffmpeg.
+# Usa únicamente la librería estándar de Python 3 (wave, array, csv, subprocess,
+# etc.) y la voz que YA TRAE el sistema operativo.
 #
-# Lo que SÍ necesita son dos cosas del SISTEMA (no de pip):
+# Funciona en:
 #
-#   1. Python 3.8 o superior   -> las Macs ya lo traen (python3)
-#   2. ffmpeg (incluye ffprobe) -> se instala con:  brew install ffmpeg
-#   3. macOS                     -> usa el comando `say` (voz del sistema)
+#   macOS    -> usa el comando `say` (integrado en macOS).
+#   Windows  -> usa System.Speech / SAPI vía PowerShell (integrado en Windows).
 #
-# Para instalar y verificar todo de un jalón, corre:
+# Lo único que necesitas:
 #
-#       ./instalar.sh
+#   - Python 3.8 o superior.
+#       macOS:   ya viene instalado (python3).
+#       Windows: instalar desde https://www.python.org/downloads/
+#                (marca "Add Python to PATH" durante la instalación).
+#
+# Para verificar que todo funcione:
+#
+#   macOS:    ./instalar.sh
+#   Windows:  .\instalar.ps1
 #
 # (No hay líneas de paquetes abajo a propósito: no hace falta ningún pip install.)

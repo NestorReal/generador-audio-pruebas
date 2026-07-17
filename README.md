@@ -3,20 +3,24 @@
 Convierte texto en archivos de audio `.wav` para pruebas. Genera el formato que
 esperan los pipelines de reconocimiento de voz: **WAV PCM, 16 kHz, mono**.
 
-Usa la voz integrada de macOS (`say`) + `ffmpeg`. Solo librería estándar de Python,
-sin dependencias de pip.
+**Funciona en macOS y en Windows.** Usa la voz que ya trae cada sistema
+(`say` en Mac, System.Speech/SAPI en Windows) y solo la librería estándar de
+Python — **no necesita instalar ffmpeg ni ningún paquete de pip**.
 
-## Instalación
+## Instalación / verificación
 
-```bash
-cd generador-audio-pruebas
-./instalar.sh
-```
+No hay que instalar nada extra: solo Python. Estos scripts lo confirman y hacen
+una prueba:
 
-El instalador revisa e instala lo que falte (ffmpeg) y hace una prueba al final.
-Si prefieres a mano: necesitas macOS + `brew install ffmpeg`.
+- **macOS:** `./instalar.sh`
+- **Windows:** `.\instalar.ps1` (en PowerShell)
+
+Requisito único: **Python 3.8+**. En Mac ya viene; en Windows se instala desde
+[python.org](https://www.python.org/downloads/) (marca *"Add Python to PATH"*).
 
 ## Los tres modos
+
+> En **macOS** usa `python3`; en **Windows** usa `python`.
 
 ### 1. Un audio suelto
 
@@ -38,7 +42,6 @@ AUDIO-2,"Le recuerdo que su estado de cuenta ya está disponible."
 ```bash
 python3 generar_audio.py --lote guiones_ejemplo.csv
 ```
-→ un `.wav` por renglón, en `audios/`.
 
 ### 3. Una conversación entre varias personas
 
@@ -71,31 +74,29 @@ Ejemplo del `.referencia.txt`:
 [  9.70s -  13.90s]  AGENTE: Con gusto. Su saldo es de diez mil pesos.
 ```
 
+## Ver las voces de tu equipo
+
+```bash
+python3 generar_audio.py --listar-voces
+```
+
+En Windows, si solo hay una voz, todos los hablantes de una conversación sonarán
+igual. Para agregar voces en español: *Configuración > Hora e idioma > Voz > Agregar voces*.
+
 ## Opciones
 
 | Opción | Para qué |
 |---|---|
 | `--out-dir CARPETA` | Guardar los audios en otra carpeta (default: `audios/`). |
-| `--voz NOMBRE` | Cambiar la voz (default: `Paulina`, es_MX). Ver otras: `say -v '?' \| grep es_` |
+| `--voz NOMBRE` | Usar una voz específica (ver `--listar-voces`). |
 | `--volumen 0.05` | Bajar el volumen para simular audio de mala calidad (solo con `--texto`). |
 | `--voces-conv "AGENTE=Paulina,CLIENTE=Juan"` | Asignar voces a mano en la conversación. |
-| `--pausa 0.6` | Segundos de silencio entre turnos de la conversación (default: 0.4). |
+| `--pausa 0.6` | Segundos de silencio entre turnos (default: 0.4). |
 
 ## Requisitos
 
-- **macOS** (usa el comando `say`; en Windows/Linux no funciona tal cual).
-- **ffmpeg** — `brew install ffmpeg`.
-- **Python 3.8+** — las Macs ya lo traen. No requiere paquetes de pip.
-
-## Archivos del proyecto
-
-| Archivo | |
-|---|---|
-| `generar_audio.py` | El programa. |
-| `instalar.sh` | Instala/verifica los requisitos y hace una prueba. |
-| `LEEME.txt` | Instrucciones detalladas paso a paso. |
-| `guiones_ejemplo.csv` | Plantilla para el modo "varios". |
-| `conversacion_ejemplo.csv` | Plantilla para el modo "conversación". |
-| `requirements.txt` | Nota sobre dependencias (no hay que instalar nada de pip). |
+- **macOS o Windows.**
+- **Python 3.8+** (Mac ya lo trae; Windows se instala de python.org).
+- Nada más: sin ffmpeg, sin pip install.
 
 Detalles completos en [`LEEME.txt`](LEEME.txt).

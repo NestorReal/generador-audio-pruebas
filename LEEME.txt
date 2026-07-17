@@ -5,45 +5,56 @@
 Este programita convierte texto en archivos de audio .wav, en el formato que
 usan las pruebas (WAV PCM, 16 kHz, mono).
 
-
----------------------------------------------------------------------------
-INSTALACION (la forma facil: un solo comando)
----------------------------------------------------------------------------
-
-Abre la app "Terminal" (Aplicaciones > Utilidades > Terminal), entra a esta
-carpeta y corre el instalador. El se encarga de revisar e instalar lo que
-falte, y hace una prueba al final:
-
-    cd ~/Documents/generador-audio-pruebas
-    ./instalar.sh
-
-Si todo sale bien, veras "TODO LISTO" y ya puedes usarlo (sigue mas abajo).
-
-Si prefieres hacerlo a mano, aqui esta lo que el instalador revisa:
+FUNCIONA EN MAC Y EN WINDOWS. Usa la voz que ya trae cada sistema, y NO necesita
+instalar ffmpeg ni ningun paquete de Python. Lo unico que ocupas es Python.
 
 
 ---------------------------------------------------------------------------
-QUE NECESITAS (si lo haces a mano)
+INSTALACION / VERIFICACION
 ---------------------------------------------------------------------------
 
-1) Una Mac.
-   El programa usa la voz integrada de macOS ("say"). En Windows o Linux
-   NO funciona.
+>>> EN MAC:
 
-2) ffmpeg.
-   En la Terminal escribe:
+   Abre la app "Terminal" (Aplicaciones > Utilidades > Terminal), entra a esta
+   carpeta y corre el verificador:
 
-       brew install ffmpeg
+       cd ~/Documents/generador-audio-pruebas
+       ./instalar.sh
 
-   Si te dice que "brew" no existe, primero instala Homebrew desde:
-       https://brew.sh
-   (es copiar y pegar una linea en la Terminal).
+   (Mac ya trae Python y la voz "say", no instalas nada.)
 
-   Para saber si ya lo tienes, escribe:  ffmpeg -version
-   Si te muestra un texto con numeros de version, ya esta instalado.
 
-3) No necesitas instalar nada de Python (usa lo que ya trae la Mac).
-   Ver requirements.txt para el detalle.
+>>> EN WINDOWS:
+
+   1) Instala Python (si no lo tienes) desde:
+          https://www.python.org/downloads/
+      IMPORTANTE: durante la instalacion marca la casilla
+          "Add Python to PATH".
+
+   2) Abre esta carpeta, manten presionada la tecla Shift, da clic derecho
+      dentro de la carpeta y elige "Abrir ventana de PowerShell aqui".
+
+   3) Escribe:
+          .\instalar.ps1
+
+      Si dice que la ejecucion de scripts esta deshabilitada, corre primero:
+          Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+      y vuelve a intentar.
+
+   (Windows ya trae la voz del sistema; no instalas nada mas que Python.)
+
+
+   NOTA para las conversaciones en Windows: si todos los hablantes suenan con
+   la misma voz, es que Windows solo tiene una voz instalada. Para agregar mas
+   voces en espanol ve a:
+       Configuracion > Hora e idioma > Voz > Agregar voces.
+
+
+   OJO CON UN DETALLE ENTRE MAC Y WINDOWS: las voces se llaman distinto en cada
+   sistema (en Mac "Paulina", "Juan"...; en Windows "Microsoft Sabina"...). Si
+   usas la opcion --voz o --voces-conv, primero mira las tuyas con:
+       python generar_audio.py --listar-voces
+   (En Windows el comando es "python"; en Mac es "python3".)
 
 
 ---------------------------------------------------------------------------
