@@ -22,12 +22,17 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import platform
 import shutil
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+# Voces distintas que se reparten automáticamente entre los hablantes de una
+# conversación (en orden de aparición). Todas verificadas en español.
+VOCES_CONVERSACION = ["Paulina", "Juan", "Mónica", "Diego", "Jorge", "Reed"]
 
 
 def _fail(msg: str) -> None:
@@ -131,6 +136,140 @@ def modo_lote(args: argparse.Namespace) -> None:
     print(f"\n✅ Listo: {generados} audio(s) en «{out_dir}».")
 
 
+def _silencio(destino: Path, segundos: float) -> None:
+    """Genera un WAV de silencio (mismo formato) para separar los turnos."""
+    subprocess.run(
+        ["ffmpeg", "-y", "-f", "lavfi", "-i", "anullsrc=r=16000:cl=mono",
+         "-t", f"{segundos}", "-c:a", "pcm_s16le", str(destino), "-loglevel", "error"],
+        check=True,
+    )
+
+
+def _parse_voces(spec: str | None) -> dict:
+    """Convierte 'AGENTE=Paulina,CLIENTE=Juan' en un dict."""
+    if not spec:
+        return {}
+    m = {}
+    for par in spec.split(","):
+        if "=" in par:
+            k, v = par.split("=", 1)
+            m[k.strip().upper()] = v.strip()
+    return m
+
+
+def modo_conversacion(args: argparse.Namespace) -> None:
+    """Genera UN audio de conversación entre varios hablantes, cada uno con voz
+    distinta, más un archivo de referencia (quién habló y en qué segundo).
+
+    El CSV de entrada tiene columnas:  speaker,texto  (un renglón por turno).
+    Ejemplo conversacion.csv:
+        speaker,texto
+        AGENTE,"Buenas tardes, le atiende Ana. ¿En qué le puedo ayudar?"
+        CLIENTE,"Hola, quiero consultar el saldo de mi contrato."
+        AGENTE,"Con gusto. Le confirmo que su saldo es de diez mil pesos."
+    """
+    ruta = Path(args.conversacion)
+    if not ruta.exists():
+        _fail(f"No existe el archivo: {ruta}")
+    with ruta.open(newline="", encoding="utf-8-sig") as f:
+        turnos = list(csv.DictReader(f))
+    if not turnos:
+        _fail(f"El archivo {ruta} está vacío o sin encabezados.")
+    cols = {c.strip().lower() for c in turnos[0].keys()}
+    if "speaker" not in cols or "texto" not in cols:
+        _fail("El CSV de conversación necesita las columnas:  speaker,texto")
+
+    if not args.salida:
+        _fail("Falta --salida (nombre del audio de la conversación).")
+
+    # Asigna una voz por hablante: primero lo que diga --voces, luego auto.
+    voces_fijas = _parse_voces(args.voces_conv)
+    asignacion: dict = {}
+    libres = [v for v in VOCES_CONVERSACION if v not in voces_fijas.values()]
+    idx = 0
+    for t in turnos:
+        spk = (t.get("speaker") or "").strip().upper()
+        if not spk or spk in asignacion:
+            continue
+        if spk in voces_fijas:
+            asignacion[spk] = voces_fijas[spk]
+        else:
+            asignacion[spk] = libres[idx % len(libres)] if libres else "Paulina"
+            idx += 1
+
+    out_dir = Path(args.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    gap = args.pausa
+
+    print(f"==> Generando conversación «{args.salida}» ({len(turnos)} turnos)")
+    print(f"    Hablantes: " + ", ".join(f"{s}→{v}" for s, v in asignacion.items()))
+
+    tmp = Path(tempfile.mkdtemp(prefix="conv_"))
+    silencio = tmp / "_silencio.wav"
+    _silencio(silencio, gap)
+
+    lista = tmp / "lista.txt"
+    referencia = []
+    cursor = 0.0
+    partes = []
+    for i, t in enumerate(turnos, 1):
+        row = {k.strip().lower(): (v or "").strip() for k, v in t.items()}
+        spk = row["speaker"].strip().upper()
+        texto = row["texto"]
+        if not spk or not texto:
+            continue
+        voz = asignacion[spk]
+        seg = tmp / f"turno_{i:03d}.wav"
+        dur = sintetizar(texto, seg, voz=voz)
+        inicio = round(cursor, 2)
+        fin = round(cursor + dur, 2)
+        referencia.append({
+            "n": i, "speaker": spk, "voz": voz,
+            "inicio_seg": inicio, "fin_seg": fin, "texto": texto,
+        })
+        partes.append(seg)
+        cursor = fin + gap  # el silencio va después de cada turno
+
+    # Arma el WAV final concatenando turno + silencio + turno + …
+    with lista.open("w", encoding="utf-8") as f:
+        for i, seg in enumerate(partes):
+            f.write(f"file '{seg}'\n")
+            if i < len(partes) - 1:
+                f.write(f"file '{silencio}'\n")
+
+    wav = out_dir / _nombre_wav(args.salida)
+    subprocess.run(
+        ["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", str(lista),
+         "-ar", "16000", "-ac", "1", "-c:a", "pcm_s16le", str(wav), "-loglevel", "error"],
+        check=True,
+    )
+    total = duracion(wav)
+
+    # Referencia en JSON (ground truth para comparar con la diarización)
+    ref_json = out_dir / f"{wav.stem}.referencia.json"
+    ref_json.write_text(json.dumps({
+        "audio": wav.name,
+        "duracion_total_seg": total,
+        "hablantes": asignacion,
+        "turnos": referencia,
+    }, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    # Referencia legible en texto
+    ref_txt = out_dir / f"{wav.stem}.referencia.txt"
+    lineas = [f"Conversación: {wav.name}   ({total:.0f}s, {len(referencia)} turnos)",
+              "Hablantes: " + ", ".join(f"{s} = voz {v}" for s, v in asignacion.items()), ""]
+    for r in referencia:
+        lineas.append(f"[{r['inicio_seg']:>6.2f}s - {r['fin_seg']:>6.2f}s]  {r['speaker']}: {r['texto']}")
+    ref_txt.write_text("\n".join(lineas) + "\n", encoding="utf-8")
+
+    shutil.rmtree(tmp, ignore_errors=True)
+
+    print(f"\n✅ Conversación lista: {wav}   ({total:.0f}s)")
+    print(f"   Referencia (quién habló y cuándo):")
+    print(f"     {ref_json.name}   (JSON, para comparar con la diarización)")
+    print(f"     {ref_txt.name}    (texto legible)")
+
+
 def main() -> None:
     p = argparse.ArgumentParser(
         description="Convierte texto en audio .wav (PCM 16 kHz mono).",
@@ -140,6 +279,13 @@ def main() -> None:
     p.add_argument("--texto", help="El texto a convertir (para un solo audio).")
     p.add_argument("--salida", help="Nombre del archivo, sin .wav (para un solo audio).")
     p.add_argument("--lote", help="Archivo CSV con columnas nombre,texto[,volumen] (para varios).")
+    p.add_argument("--conversacion", help="CSV con columnas speaker,texto: genera UNA conversación "
+                                          "entre varios hablantes (voz distinta c/u) + su referencia. "
+                                          "Requiere --salida.")
+    p.add_argument("--voces-conv", help="Asignar voces a mano en conversación, ej: "
+                                        "\"AGENTE=Paulina,CLIENTE=Juan\". Por defecto se reparten solas.")
+    p.add_argument("--pausa", type=float, default=0.4,
+                   help="Segundos de silencio entre turnos de la conversación (default: 0.4).")
     p.add_argument("--out-dir", default="./audios",
                    help="Carpeta donde guardar los audios (por defecto: ./audios).")
     p.add_argument("--voz", default="Paulina",
@@ -150,12 +296,17 @@ def main() -> None:
     args = p.parse_args()
 
     revisar_requisitos()
-    if args.lote:
+    if args.conversacion:
+        modo_conversacion(args)
+    elif args.lote:
         modo_lote(args)
     elif args.texto and args.salida:
         modo_uno(args)
     else:
-        p.error("Usa  --texto y --salida  (un audio)  o  --lote archivo.csv  (varios).")
+        p.error("Elige un modo:\n"
+                "  • un audio:      --texto \"...\" --salida NOMBRE\n"
+                "  • varios:        --lote archivo.csv\n"
+                "  • conversación:  --conversacion archivo.csv --salida NOMBRE")
 
 
 if __name__ == "__main__":

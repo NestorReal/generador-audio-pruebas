@@ -81,6 +81,38 @@ Primero, en la Terminal, entra a la carpeta donde esta este programa. Ejemplo:
     Ya viene un "guiones_ejemplo.csv" para que lo copies y lo edites.
 
 
+>>> OPCION C — una CONVERSACION entre varias personas:
+
+    python3 generar_audio.py --conversacion conversacion_ejemplo.csv --salida MI-LLAMADA
+
+    Esto crea UN solo audio con la conversacion, donde cada persona habla con
+    una voz distinta. El archivo de conversacion se ve asi:
+
+        speaker,texto
+        AGENTE,"Buenas tardes, le atiende Ana. Con gusto le ayudo."
+        CLIENTE,"Hola, quiero consultar mi saldo."
+        AGENTE,"Su saldo es de diez mil pesos."
+
+    - "speaker" = quien habla (AGENTE, CLIENTE, o el nombre que quieras).
+    - "texto"   = lo que dice en ese turno.
+
+    Ademas del audio (MI-LLAMADA.wav) genera DOS archivos de referencia:
+      - MI-LLAMADA.referencia.txt   -> lista legible: quien hablo, en que segundo
+                                        y que dijo.
+      - MI-LLAMADA.referencia.json  -> lo mismo en formato JSON, util para
+                                        comparar contra lo que detecte el sistema
+                                        de separacion de hablantes (diarizacion).
+
+    Las voces se reparten solas. Si quieres elegirlas:
+        python3 generar_audio.py --conversacion conversacion_ejemplo.csv \
+          --salida MI-LLAMADA --voces-conv "AGENTE=Paulina,CLIENTE=Juan"
+
+    Y para cambiar la pausa entre turnos (default 0.4 seg):
+        ... --pausa 0.6
+
+    Ya viene un "conversacion_ejemplo.csv" para que lo copies y lo edites.
+
+
 ---------------------------------------------------------------------------
 OPCIONES EXTRA (no son obligatorias)
 ---------------------------------------------------------------------------

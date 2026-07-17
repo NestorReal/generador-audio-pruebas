@@ -26,6 +26,15 @@ python3 generar_audio.py --texto "Buenas tardes, le confirmo su saldo." --salida
 python3 generar_audio.py --lote guiones_ejemplo.csv
 ```
 
+**Una conversación** entre varias personas (cada una con voz distinta) desde un CSV
+con columnas `speaker,texto`:
+```bash
+python3 generar_audio.py --conversacion conversacion_ejemplo.csv --salida MI-LLAMADA
+```
+Genera el audio de la llamada **más un archivo de referencia** (`.referencia.json` y
+`.referencia.txt`) que documenta quién habló, en qué segundo y qué dijo — útil como
+"ground truth" para comparar contra la separación de hablantes (diarización) del sistema.
+
 Los audios quedan en la carpeta `audios/`.
 
 ## Requisitos
